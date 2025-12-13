@@ -3,6 +3,9 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
+import '../models/address.dart';
+import '../models/user.dart';
+
 class ImageCarousal extends StatefulWidget {
   const ImageCarousal({
     super.key,
@@ -25,6 +28,25 @@ class _ImageCarousalState extends State<ImageCarousal> {
   void initState() {
     super.initState();
     mainImage = widget.imageList.isNotEmpty ? widget.imageList[0] : '';
+
+    Address address = Address('My st.', 'New York', 'NY', 'USA', '12345');
+    User user = User('John', 'Doe', address);
+    print(user.toJson());
+    //fix this json format
+    var json = {
+      'name': 'John',
+      'email': 'Doe',
+      'address': {
+        'street': 'My st.',
+        'city': 'New York',
+        'stateCode': 'NY',
+        'countryName': 'USA',
+        'zipcode': '12345',
+      },
+    };
+    var user1 = User.fromJson(json);
+    print(user1.address?.country);
+    print(user1.address?.pincode);
   }
 
   void onHover(String imageUrl) {
