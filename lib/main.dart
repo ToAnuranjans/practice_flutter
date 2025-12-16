@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:practice_flutter/frame.dart';
 
+import 'feature/cube.dart';
 
 void main() {
   runApp(const MyApp());
@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const Frame(),
+      home: const XCube(),
     );
   }
 }

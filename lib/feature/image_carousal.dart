@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../models/address.dart';
@@ -31,7 +32,9 @@ class _ImageCarousalState extends State<ImageCarousal> {
 
     Address address = Address('My st.', 'New York', 'NY', 'USA', '12345');
     User user = User('John', 'Doe', address);
-    print(user.toJson());
+    if (kDebugMode) {
+      print(user.toJson());
+    }
     //fix this json format
     var json = {
       'name': 'John',
@@ -45,8 +48,10 @@ class _ImageCarousalState extends State<ImageCarousal> {
       },
     };
     var user1 = User.fromJson(json);
-    print(user1.address?.country);
-    print(user1.address?.pincode);
+    if (kDebugMode) {
+      print(user1.address?.country);
+      print(user1.address?.pincode);
+    }
   }
 
   void onHover(String imageUrl) {
