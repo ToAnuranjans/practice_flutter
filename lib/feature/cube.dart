@@ -1,4 +1,4 @@
-import 'dart:math' as math;
+import 'dart:math' as math show pi;
 
 import 'package:flutter/material.dart';
 
@@ -10,241 +10,145 @@ class XCube extends StatefulWidget {
 }
 
 class _XCubeState extends State<XCube> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  bool _animating = true;
+  late AnimationController _controller;
+  // Rotation angles for the whole cube
+  double _rotX = -0.5;
+  double _rotY = 0.6;
 
   @override
   void initState() {
-    super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 8),
-    )..repeat();
+      duration: const Duration(seconds: 2),
+    );
+    Tween<double>(begin: 0, end: 1).animate(_controller).addListener(() {
+      setState(() {});
+    });
+    _controller.repeat(reverse: true);
+    super.initState();
   }
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  Widget build(BuildContext context) {
+    const double size = 180; // cube face size
+    final double half = size / 2; // distance from center to each face
 
-  void _toggleAnimation() {
-    setState(() {
-      _animating = !_animating;
-      if (_animating) {
-        _controller.repeat();
-      } else {
-        _controller.stop(canceled: false);
-      }
-    });
-  }
+    return Scaffold(
+      appBar: AppBar(title: const Text("3D Cube")),
+      body: Center(
+        child: GestureDetector(
+          onPanUpdate: (details) {
+            setState(() {
+              // drag horizontally -> rotateY, vertically -> rotateX
+              _rotY += details.delta.dx * 0.01;
+              _rotX -= details.delta.dy * 0.01;
+            });
+          },
+          child: Transform(
+            alignment: Alignment.center,
+            transform: Matrix4.identity()
+              ..setEntry(3, 2, 0.00002) // perspective (smaller = less depth)
+              ..rotateX(_rotX)
+              ..rotateY(_rotY),
+            child: SizedBox(
+              width: size,
+              height: size,
+              child: Stack(
+                children: [
+                  // FRONT (+Z)
+                  _face(
+                    size: size,
+                    color: Colors.red,
+                    label: "Front",
+                    transform: Matrix4.identity()
+                      ..translateByDouble(0.0, 0.0, half, 1.0),
+                  ),
 
-  Widget _buildFace(double size, Color color, String label) {
-    return Container(
-      width: size,
-      height: size,
-      color: color,
-      alignment: Alignment.center,
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-          fontSize: 18,
+                  // BACK (-Z) : rotate 180 around Y then push forward
+                  _face(
+                    size: size,
+                    color: Colors.blue,
+                    label: "Back",
+                    transform: Matrix4.identity()
+                      ..rotateX(math.pi)
+                      ..translateByDouble(0.0, 0.0, half, 1.0),
+                  ),
+
+                  // // RIGHT (+X)
+                  _face(
+                    size: size,
+                    color: Colors.green,
+                    label: "Right",
+                    transform: Matrix4.identity()
+                      ..rotateY(math.pi / 2)
+                      ..translateByDouble(0.0, 0.0, half, 1.0),
+                  ),
+
+                  // // LEFT (-X)
+                  _face(
+                    size: size,
+                    color: Colors.orange,
+                    label: "Left",
+                    transform: Matrix4.identity()
+                      ..rotateY(-math.pi / 2)
+                      ..translateByDouble(0.0, 0.0, half, 1.0),
+                  ),
+
+                  // // TOP (-Y)
+                  _face(
+                    size: size,
+                    color: Colors.purple,
+                    label: "Top",
+                    transform: Matrix4.identity()
+                      ..rotateX(-math.pi / 2)
+                      ..translateByDouble(0.0, 0.0, half, 1.0),
+                  ),
+
+                  // // BOTTOM (+Y)
+                  _face(
+                    size: size,
+                    color: Colors.teal,
+                    label: "Bottom",
+                    transform: Matrix4.identity()
+                      ..rotateX(math.pi / 2)
+                      ..translateByDouble(0.0, 0.0, half, 1.0),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 
-  // Create a transformed face using a local transform and the global rotation.
-  Widget _positionedFace({
+  Widget _face({
     required double size,
-    required Matrix4 faceTransform,
-    required Widget child,
-    required Matrix4 globalTransform,
+    required Color color,
+    required String label,
+    required Matrix4 transform,
   }) {
-    // Combine global rotation with face-specific transform
-    final Matrix4 m = Matrix4.identity()
-      ..setEntry(3, 2, 0.001) // perspective
-      ..multiply(globalTransform)
-      ..multiply(faceTransform);
-
-    return Transform(transform: m, alignment: Alignment.center, child: child);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final double size =
-            math.min(constraints.maxWidth, constraints.maxHeight) * 0.6;
-
-        return GestureDetector(
-          onTap: _toggleAnimation,
-          child: Center(
-            child: SizedBox(
-              width: size,
-              height: size,
-              child: AnimatedBuilder(
-                animation: _controller,
-                builder: (context, _) {
-                  final double t = _controller.value * math.pi * 2;
-                  // Global rotation applied to the whole cube
-                  final Matrix4 global = Matrix4.identity()
-                    ..setEntry(3, 2, 0.001)
-                    ..rotateX(t * 0.6)
-                    ..rotateY(t * 0.9);
-
-                  final double half = size / 2;
-
-                  // Face transforms: translate forward by half the cube, then rotate to face direction
-                  final faceFront = Matrix4.identity()
-                    ..translate(0.0, 0.0, half);
-                  final faceBack = Matrix4.identity()
-                    ..rotateY(math.pi)
-                    ..translate(0.0, 0.0, half);
-                  final faceRight = Matrix4.identity()
-                        // Face transforms: translate forward by half the cube, then rotate to face direction
-                        final faceFront = Matrix4.identity()..translate(0.0, 0.0, half);
-                        final faceBack = Matrix4.identity()..rotateY(math.pi)..translate(0.0, 0.0, half);
-                        final faceRight = Matrix4.identity()..rotateY(math.pi / 2)..translate(0.0, 0.0, half);
-                        final faceLeft = Matrix4.identity()..rotateY(-math.pi / 2)..translate(0.0, 0.0, half);
-                        final faceTop = Matrix4.identity()..rotateX(-math.pi / 2)..translate(0.0, 0.0, half);
-                        final faceBottom = Matrix4.identity()..rotateX(math.pi / 2)..translate(0.0, 0.0, half);
-
-                        // Prepare faces with their base colors and local normals
-                        final faces = <Map<String, dynamic>>[
-                          {
-                            'transform': faceBack,
-                            'color': Colors.blue.shade700,
-                            'label': 'Back',
-                            'normal': vmath.Vector3(0, 0, -1),
-                          },
-                          {
-                            'transform': faceLeft,
-                            'color': Colors.green.shade700,
-                            'label': 'Left',
-                            'normal': vmath.Vector3(-1, 0, 0),
-                          },
-                          {
-                            'transform': faceRight,
-                            'color': Colors.orange.shade700,
-                            'label': 'Right',
-                            'normal': vmath.Vector3(1, 0, 0),
-                          },
-                          {
-                            'transform': faceTop,
-                            'color': Colors.purple.shade700,
-                            'label': 'Top',
-                            'normal': vmath.Vector3(0, -1, 0),
-                          },
-                          {
-                            'transform': faceBottom,
-                            'color': Colors.teal.shade700,
-                            'label': 'Bottom',
-                            'normal': vmath.Vector3(0, 1, 0),
-                          },
-                          {
-                            'transform': faceFront,
-                            'color': Colors.red.shade700,
-                            'label': 'Front',
-                            'normal': vmath.Vector3(0, 0, 1),
-                          },
-                        ];
-
-                        // Combine global and face transforms, compute depth and simple shading, then sort back-to-front
-                        final lightDir = vmath.Vector3(0, 0, 1)..normalize();
-                        final List<Map<String, dynamic>> painted = [];
-
-                        for (final face in faces) {
-                          final Matrix4 M = Matrix4.identity()
-                            ..setEntry(3, 2, 0.001)
-                            ..multiply(global)
-                            ..multiply(face['transform'] as Matrix4);
-
-                          // transformed center depth (z)
-                          final vmath.Vector3 center = M.transform3(vmath.Vector3.zero());
-
-                          // compute transformed normal (rotation only)
-                          final Matrix4 rotOnly = Matrix4.copy(M);
-                          rotOnly.setTranslationRaw(0, 0, 0);
-                          final vmath.Vector3 tnormal = rotOnly.transform3((face['normal'] as vmath.Vector3).clone())..normalize();
-
-                          // simple diffuse shading
-                          double shade = tnormal.dot(lightDir);
-                          shade = (shade * 0.5) + 0.5; // map from [-1,1] to [0,1]
-                          shade = shade.clamp(0.2, 1.0);
-
-                          final Color baseColor = face['color'] as Color;
-                          final Color shaded = Color.lerp(Colors.black, baseColor, shade)!;
-
-                          painted.add({
-                            'matrix': M,
-                            'z': center.z,
-                            'widget': _buildFace(size, shaded, face['label'] as String),
-                          });
-                        }
-
-                        painted.sort((a, b) => (a['z'] as double).compareTo(b['z'] as double));
-
-                        // Render faces from far to near
-                        return Stack(
-                          clipBehavior: Clip.none,
-                          children: painted.map<Widget>((entry) {
-                            return Transform(
-                              transform: entry['matrix'] as Matrix4,
-                              alignment: Alignment.center,
-                              child: entry['widget'] as Widget,
-                            );
-                          }).toList(),
-                        );
-                        faceTransform: faceBack,
-                        globalTransform: global,
-                        child: _buildFace(size, Colors.blue.shade700, 'Back'),
-                      ),
-                      _positionedFace(
-                        size: size,
-                        faceTransform: faceLeft,
-                        globalTransform: global,
-                        child: _buildFace(size, Colors.green.shade700, 'Left'),
-                      ),
-                      _positionedFace(
-                        size: size,
-                        faceTransform: faceRight,
-                        globalTransform: global,
-                        child: _buildFace(
-                          size,
-                          Colors.orange.shade700,
-                          'Right',
-                        ),
-                      ),
-                      _positionedFace(
-                        size: size,
-                        faceTransform: faceTop,
-                        globalTransform: global,
-                        child: _buildFace(size, Colors.purple.shade700, 'Top'),
-                      ),
-                      _positionedFace(
-                        size: size,
-                        faceTransform: faceBottom,
-                        globalTransform: global,
-                        child: _buildFace(size, Colors.teal.shade700, 'Bottom'),
-                      ),
-                      // Front face (drawn last so it's on top)
-                      _positionedFace(
-                        size: size,
-                        faceTransform: faceFront,
-                        globalTransform: global,
-                        child: _buildFace(size, Colors.red.shade700, 'Front'),
-                      ),
-                    ],
-                  );
-                },
-              ),
+    return Transform(
+      alignment: Alignment.center,
+      transform: transform,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: color.withOpacity(1),
+          border: Border.all(color: Colors.black54, width: 2),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
