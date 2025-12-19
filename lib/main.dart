@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:practice_flutter/feature/ludo_home_screen.dart';
+import 'package:practice_flutter/feature/x_custom_paint.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,7 +16,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const LudoHomeScreen(),
+      home: const XCustomPaint(),
     );
   }
 }
